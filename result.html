@@ -1,66 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Result Page</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
-    <style>
-        body {
-            background-color: #f5f5f5;
-        }
-        .container {
-            margin-top: 50px;
-        }
-        .textContainer {
-            display: inline-block;
-            width: 45%;
-            text-align: left;
-            vertical-align: top;
-            padding: 10px;
-            background-color: #fff;
-            border: 1px solid #ddd;
-            margin-right: 5%;
-        }
-        .scoreContainer {
-            display: inline-block;
-            width: 45%;
-            text-align: center;
-            vertical-align: top;
-            padding: 10px;
-            background-color: #fff;
-            border: 1px solid #ddd;
-        }
-        .pdf-container {
-            width: 100%;
-            height: 600px;
-            border: 1px solid #ddd;
-            overflow: hidden;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evaluation Results</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <style>
+      body {
+          background-color: #f8f9fa;
+          padding: 20px;
+      }
+      .container-main {
+          background-color: white;
+          border-radius: 10px;
+          box-shadow: 0 0 15px rgba(0,0,0,0.1);
+          padding: 30px;
+      }
+      .score-section {
+          margin-bottom: 30px;
+      }
+      .part-title {
+          color: #2c3e50;
+          border-bottom: 3px solid #3498db;
+          padding-bottom: 10px;
+          margin-bottom: 25px;
+          font-size: 1.4em;
+      }
+      .question-group {
+          margin-bottom: 25px;
+          padding: 15px;
+          border: 1px solid #ecf0f1;
+          border-radius: 8px;
+          background-color: #fdfdfe;
+      }
+      .subquestion-row {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+          gap: 20px;
+          margin-top: 15px;
+      }
+      .pdf-viewer {
+          height: 750px;
+          border: 1px solid #bdc3c7;
+          border-radius: 8px;
+          background: #f8f9fa;
+      }
+      .score-input {
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid #bdc3c7;
+          border-radius: 5px;
+          font-size: 0.95em;
+      }
+      .score-label {
+          font-weight: 500;
+          color: #34495e;
+          margin-bottom: 5px;
+      }
+      .submit-btn {
+          padding: 12px 30px;
+          font-size: 1.1em;
+          letter-spacing: 0.5px;
+      }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="row">
-            <div class="textContainer">
-                <h2>Answer Script</h2>
-                <div class="pdf-container">
-                    <iframe src="{{ url_for('static', filename='uploads/' + answerscript_filename) }}" width="100%" height="100%"></iframe>
-                </div>
-            </div>
-            <div class="scoreContainer">
-                <h2>Score</h2>
-                <form method="post" action="{{ url_for('submit_scores') }}">
-                    {% for i in range(6) %}
-                        <div class="form-group">
-                            <label for="q{{ i }}">Question {{ i + 1 }} Score:</label>
-                            <input type="number" class="form-control" id="q{{ i }}" name="scores" value="{{ scores[i] }}" min="0" max="5">
-                        </div>
-                    {% endfor %}
-                    <button type="submit" class="btn btn-primary">Submit</button>
-                </form>
-            </div>
-        </div>
-    </div>
+  <div class="container container-main">
+      <div class="row">
+          <!-- Answer Script Viewer -->
+          <div class="col-md-6">
+              <h3 class="part-title">Answer Script</h3>
+              <div class="pdf-viewer">
+                  <iframe src="{{ url_for('static', filename='uploads/' + answerscript_filename) }}" 
+                          width="100%" 
+                          height="100%"
+                          style="border:none;"></iframe>
+              </div>
+          </div>
+
+          <!-- Scores Section -->
+          <div class="col-md-6">
+              <form method="post" action="{{ url_for('submit_scores') }}">
+                  <input type="hidden" name="roll_no" value="{{ stu_roll }}">
+
+                  {% if pattern_type == "pattern1" %}
+                  <!-- Pattern 1: Part-A (10 questions) and Part-B (Q11-Q15 with a/b subquestions) -->
+                  <div class="score-section">
+                      <h4 class="part-title">Part-A Scores (1 Mark Each)</h4>
+                      <div class="subquestion-row">
+                          {% for i in range(10) %}
+                          <div>
+                              <div class="score-label">Question {{ i+1 }}:</div>
+                              <input type="number" class="score-input" 
+                                     name="scores" 
+                                     value="{{ scores[i] }}"
+                                     min="0" max="1" step="0.5" required>
+                          </div>
+                          {% endfor %}
+                      </div>
+                  </div>
+
+                  <div class="score-section">
+                      <h4 class="part-title">Part-B Scores (10 Marks Per Subquestion)</h4>
+                      {% for q_num in range(11, 16) %}
+                      <div class="question-group">
+                          <h5>Question {{ q_num }}</h5>
+                          <div class="subquestion-row">
+                              {% set base_index = 10 + ((q_num - 11) * 2) %}
+                              <div>
+                                  <div class="score-label">a) Score:</div>
+                                  <input type="number" class="score-input" 
+                                         name="scores" 
+                                         value="{{ scores[base_index] }}"
+                                         min="0" max="10" step="0.5">
+                              </div>
+                              <div>
+                                  <div class="score-label">b) Score:</div>
+                                  <input type="number" class="score-input" 
+                                         name="scores" 
+                                         value="{{ scores[base_index + 1] }}"
+                                         min="0" max="10" step="0.5">
+                              </div>
+                          </div>
+                      </div>
+                      {% endfor %}
+                  </div>
+                  {% elif pattern_type == "pattern2" %}
+                  <!-- Pattern 2: Part-A is 1 question with 10 subquestions (a-j) and Part-B are questions 2-7 -->
+                  <div class="score-section">
+                      <h4 class="part-title">Part-A Score (1 Question with 10 Subquestions)</h4>
+                      <div class="subquestion-row">
+                          {% set subs = ['a','b','c','d','e','f','g','h','i','j'] %}
+                          {% for i in range(10) %}
+                          <div>
+                              <div class="score-label">Subquestion {{ subs[i] }}:</div>
+                              <input type="number" class="score-input" 
+                                     name="scores" 
+                                     value="{{ scores[i] }}"
+                                     min="0" max="1" step="0.5" required>
+                          </div>
+                          {% endfor %}
+                      </div>
+                  </div>
+
+                  <div class="score-section">
+                      <h4 class="part-title">Part-B Scores (Questions 2 to 7)</h4>
+                      <div class="subquestion-row">
+                          {% for q_num in range(2, 8) %}
+                          <div class="question-group">
+                              <div class="score-label">Question {{ q_num }}:</div>
+                              <input type="number" class="score-input" 
+                                     name="scores" 
+                                     value="{{ scores[10 + (q_num - 2)] }}"
+                                     min="0" max="10" step="0.5">
+                          </div>
+                          {% endfor %}
+                      </div>
+                  </div>
+                  {% endif %}
+
+                  <div class="text-center mt-5">
+                      <button type="submit" class="btn btn-primary submit-btn">
+                          Submit Final Scores
+                      </button>
+                  </div>
+              </form>
+          </div>
+      </div>
+  </div>
 </body>
 </html>
