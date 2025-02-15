@@ -8,30 +8,28 @@ import os
 import boto3
 import io
 from dotenv import load_dotenv
+import re
 
-# Load environment variables
+ 
 load_dotenv()
 
-# Initialize Flask app
+
 app = Flask(__name__)
 
-# Secret key for session management
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'abc3445')
 
-# MySQL configuration
-app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST', 'localhost')
-app.config['MYSQL_USER'] = os.getenv('MYSQL_USER', 'root')
-app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD', 'root')
-app.config['MYSQL_DB'] = os.getenv('MYSQL_DB', 'papers')
+app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST', 'sql12.freesqldatabase.com')
+app.config['MYSQL_USER'] = os.getenv('MYSQL_USER', 'sql12762032')
+app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD', 'HuJQwLnQyb')
+app.config['MYSQL_DB'] = os.getenv('MYSQL_DB', 'sql12762032')
 
-# Initialize MySQL
+
 mysql = MySQL(app)
 
 UPLOAD_FOLDER = 'static/uploads'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-# Set up Google Generative AI SDK
 genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
 
 generation_config = {
@@ -47,15 +45,120 @@ model = genai.GenerativeModel(
     generation_config=generation_config,
 )
 
-def gpt(questions, answers):
+def determine_pattern(questions_text):
+    """
+    Detect the paper pattern based on keywords in the extracted text.
+    Pattern1: 10 separate Part-A questions and Part-B questions numbered 11-15.
+    Pattern2: Part-A is 1 question with 10 subquestions (a-j) and Part-B uses questions 2-7.
+    Adjust these heuristics to suit your actual documents.
+    """
+    lower_text = questions_text.lower()
+    if "question 11" in lower_text or "q11" in lower_text:
+        return "pattern1"
+    elif "question 1" in lower_text and "a)" in lower_text:
+        return "pattern2"
+    else:
+        return "pattern1"
+
+def gpt(questions, answers, pattern_type="pattern1"):
     try:
-        user_input = "You are an examiner. Just give only the score for the above questions each question is out of 5m and give marks individually for each question and the ouput should be only score. Question paper: " + questions + " Answerscript: " + answers
+        if pattern_type == "pattern1":
+            user_input = f"""Evaluate the answer script strictly following these rules:
+
+PART-A (10 questions, 1 mark each):
+- Return 10 scores separated by spaces (0.0 or 0.5 or 1.0)
+Example: '1.0 0.5 1.0 0.0 1.0 0.5 1.0 1.0 0.5 1.0'
+
+PART-B (5 main questions Q11-Q15, each with subquestions a and b):
+- For each answered subquestion, use format 'q<x><y>:score' where <x> is the question number (11-15) and <y> is either a or b.
+- Score must be between 0.0 and 10.0
+
+QUESTION PAPER:
+{questions}
+
+ANSWER SCRIPT:
+{answers}
+"""
+        elif pattern_type == "pattern2":
+            user_input = f"""Evaluate the answer script strictly following these rules:
+
+PART-A (1 question with 10 subquestions a-j, 1 mark each):
+- Return 10 scores in the format '1a:score 1b:score ... 1j:score'
+Example: '1a:1.0 1b:0.5 1c:1.0 1d:0.0 1e:1.0 1f:0.5 1g:1.0 1h:1.0 1i:0.5 1j:1.0'
+
+PART-B (6 main questions Q2-Q7):
+- For each answered question, use format 'q<x>:score'
+- Score must be between 0.0 and 10.0
+
+QUESTION PAPER:
+{questions}
+
+ANSWER SCRIPT:
+{answers}
+"""
+      
         chat_session = model.start_chat(history=[])
         response = chat_session.send_message(user_input)
-        scores = [int(s.strip()) for s in response.text.split() if s.strip().isdigit()][:6]  # Limit to 6 scores
-        return scores
+        response_text = response.text.strip().lower()
+
+
+        if pattern_type == "pattern1":
+            part_a_pattern = re.compile(r'\b(0\.0|0\.5|1\.0)\b')
+            part_a_matches = part_a_pattern.findall(response_text)
+            if len(part_a_matches) >= 10:
+                part_a_scores = [float(s) for s in part_a_matches[:10]]
+            else:
+                part_a_scores = [0.0] * 10
+
+            part_b_pattern = re.compile(r'q(\d{2})(a|b):\s*(\d+(?:\.\d+)?)')
+            part_b_matches = part_b_pattern.findall(response_text)
+            
+            part_b_dict = {}
+            for match in part_b_matches:
+                q_num = int(match[0])
+                sub_q = match[1]
+                score = float(match[2])
+                if 11 <= q_num <= 15:
+                    key = f"{q_num}{sub_q}"
+                    
+                    if key in part_b_dict:
+                        part_b_dict[key] = max(part_b_dict[key], score)
+                    else:
+                        part_b_dict[key] = score
+            part_b_scores = []
+            for q in range(11, 16):
+                for sub in ['a', 'b']:
+                    key = f"{q}{sub}"
+                    val = part_b_dict.get(key, 0.0)
+                    part_b_scores.append(max(0.0, min(val, 10.0)))
+
+            return part_a_scores + part_b_scores
+
+        elif pattern_type == "pattern2":
+            part_a_pattern = re.compile(r'1([a-j]):\s*(\d+(?:\.\d+)?)')
+            part_a_matches = part_a_pattern.findall(response_text)
+            part_a_scores = [0.0] * 10
+            for match in part_a_matches:
+                sub = match[0]
+                score = float(match[1])
+                idx = ord(sub) - ord('a')
+                part_a_scores[idx] = max(0.0, min(score, 1.0))
+            
+      
+            part_b_pattern = re.compile(r'q([2-7]):\s*(\d+(?:\.\d+)?)')
+            part_b_matches = part_b_pattern.findall(response_text)
+           
+            part_b_dict = {str(q): 0.0 for q in range(2, 8)}
+            for match in part_b_matches:
+                q = match[0]
+                score = float(match[1])
+                part_b_dict[q] = max(0.0, min(score, 10.0))
+            
+            part_b_scores = [part_b_dict[str(q)] for q in range(2, 8)]
+            return part_a_scores + part_b_scores
+
     except Exception as e:
-        return f"An error occurred: {e}"
+        return f"Evaluation error: {str(e)}"
 
 @app.route('/')
 @app.route('/dash.html', methods=['GET', 'POST'])
@@ -87,13 +190,13 @@ def dash():
 def result():
     cursor = mysql.connection.cursor()
     cursor.execute("SELECT questionpaper, answerscript, stu_roll FROM paper ORDER BY created_at DESC LIMIT 1")
-    result = cursor.fetchone()
+    result_data = cursor.fetchone()
     cursor.close()
 
-    if result:
-        questionpaper_filename = result[0]
-        answerscript_filename = result[1]
-        stu_roll = result[2]
+    if result_data:
+        questionpaper_filename = result_data[0]
+        answerscript_filename = result_data[1]
+        stu_roll = result_data[2]
 
         questionpaper_path = os.path.join(UPLOAD_FOLDER, questionpaper_filename)
         answerscript_path = os.path.join(UPLOAD_FOLDER, answerscript_filename)
@@ -101,22 +204,39 @@ def result():
         questions = extract_text_from_pdf(questionpaper_path)
         answers = extract_text_from_pdf(answerscript_path)
 
-        scores = gpt(questions, answers)
-        if isinstance(scores, str):  # Check if there was an error
+        pattern_type = determine_pattern(questions)
+        scores = gpt(questions, answers, pattern_type=pattern_type)
+        if isinstance(scores, str):
             flash(scores)
             return redirect(url_for('dash'))
     else:
         flash('No files found for processing')
         return redirect(url_for('dash'))
 
-    return render_template('result.html', questions=questions, answers=answers, scores=scores, answerscript_filename=answerscript_filename)
+    return render_template('result.html', 
+                           scores=scores, 
+                           answerscript_filename=answerscript_filename,
+                           stu_roll=stu_roll,
+                           pattern_type=pattern_type)
 
 @app.route('/submit_scores', methods=['POST'])
 def submit_scores():
-    scores = request.form.getlist('scores')
-    # Process the submitted scores as needed
-    flash('Scores successfully submitted')
-    return redirect(url_for('dash'))
+    try:
+        scores = list(map(float, request.form.getlist('scores')))
+        roll_no = request.form['roll_no']
+        total_score = sum(scores)
+
+        cursor = mysql.connection.cursor()
+        cursor.execute("INSERT INTO result (Roll_no,score) VALUES (%s, %s)", 
+                      (roll_no, total_score))
+        mysql.connection.commit()
+        cursor.close()
+
+        flash('Scores successfully submitted')
+        return redirect(url_for('dash'))
+    except Exception as e:
+        flash(f'Error submitting scores: {str(e)}')
+        return redirect(url_for('dash'))
 
 def extract_text_from_pdf(pdf_path):
     images = convert_from_path(pdf_path)
@@ -144,4 +264,4 @@ def extract_text_from_image(image):
     return "\n".join(texts)
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)), debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5001)), debug=True)
