@@ -18,7 +18,7 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'abc3445')
 # MySQL configuration
 app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST', '127.0.0.1')
 app.config['MYSQL_USER'] = os.getenv('MYSQL_USER', 'root')
-app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD', '1968833')
+app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD', '19688833')
 app.config['MYSQL_DB'] = os.getenv('MYSQL_DB', 'papers')
 mysql = MySQL(app)
 
