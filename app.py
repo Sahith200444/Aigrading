@@ -184,6 +184,7 @@ ANSWER SCRIPT:
     except Exception as e:
         return f"Evaluation error: {str(e)}"
 
+@app.route('/')
 @app.route('/dash.html', methods=['GET', 'POST'])
 def dash():
     if request.method == 'POST':
