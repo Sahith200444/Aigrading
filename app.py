@@ -1,37 +1,29 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_mysqldb import MySQL
 import google.generativeai as genai
 from datetime import datetime
-from pdf2image import convert_from_path
+from pdf2image import convert_from_bytes
 from PIL import Image
-import os
 import boto3
 import io
 from dotenv import load_dotenv
 import re
 
- 
 load_dotenv()
 
-
 app = Flask(__name__)
-
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'abc3445')
 
+# MySQL configuration
 app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST', 'sql12.freesqldatabase.com')
 app.config['MYSQL_USER'] = os.getenv('MYSQL_USER', 'sql12762032')
 app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD', 'HuJQwLnQyb')
 app.config['MYSQL_DB'] = os.getenv('MYSQL_DB', 'sql12762032')
-
-
 mysql = MySQL(app)
 
-UPLOAD_FOLDER = 'static/uploads'
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-
+# Configure google generative AI
 genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
-
 generation_config = {
     "temperature": 1,
     "top_p": 0.95,
@@ -39,19 +31,59 @@ generation_config = {
     "max_output_tokens": 8192,
     "response_mime_type": "text/plain",
 }
-
 model = genai.GenerativeModel(
     model_name="gemini-1.5-flash",
     generation_config=generation_config,
 )
 
+# Helper: Create an S3 client
+def get_s3_client():
+    return boto3.client(
+        's3',
+        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+        region_name=os.getenv('AWS_DEFAULT_REGION', 'us-east-1')
+    )
+
+# Helper: Generate a presigned URL for an S3 object
+def get_s3_presigned_url(s3_key):
+    s3 = get_s3_client()
+    bucket_name = os.getenv('S3_BUCKET')
+    return s3.generate_presigned_url(
+        'get_object',
+        Params={'Bucket': bucket_name, 'Key': s3_key},
+        ExpiresIn=3600  # URL valid for 1 hour
+    )
+
+# Helper: Download PDF from S3 and extract its text
+def extract_text_from_pdf_s3(s3_key):
+    s3 = get_s3_client()
+    bucket_name = os.getenv('S3_BUCKET')
+    response = s3.get_object(Bucket=bucket_name, Key=s3_key)
+    pdf_bytes = response['Body'].read()
+    images = convert_from_bytes(pdf_bytes)
+    text = ''
+    for image in images:
+        text += extract_text_from_image(image)
+    return text
+
+# Helper: Use Textract to extract text from an image
+def extract_text_from_image(image):
+    client = boto3.client(
+        'textract',
+        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+        region_name='us-east-1'
+    )
+    image_byte_array = io.BytesIO()
+    image.save(image_byte_array, format='PNG')
+    content = image_byte_array.getvalue()
+    response = client.detect_document_text(Document={'Bytes': content})
+    blocks = response.get('Blocks', [])
+    texts = [block['Text'] for block in blocks if block.get('BlockType') == 'LINE']
+    return "\n".join(texts)
+
 def determine_pattern(questions_text):
-    """
-    Detect the paper pattern based on keywords in the extracted text.
-    Pattern1: 10 separate Part-A questions and Part-B questions numbered 11-15.
-    Pattern2: Part-A is 1 question with 10 subquestions (a-j) and Part-B uses questions 2-7.
-    Adjust these heuristics to suit your actual documents.
-    """
     lower_text = questions_text.lower()
     if "question 11" in lower_text or "q11" in lower_text:
         return "pattern1"
@@ -96,11 +128,9 @@ QUESTION PAPER:
 ANSWER SCRIPT:
 {answers}
 """
-      
         chat_session = model.start_chat(history=[])
         response = chat_session.send_message(user_input)
         response_text = response.text.strip().lower()
-
 
         if pattern_type == "pattern1":
             part_a_pattern = re.compile(r'\b(0\.0|0\.5|1\.0)\b')
@@ -112,7 +142,6 @@ ANSWER SCRIPT:
 
             part_b_pattern = re.compile(r'q(\d{2})(a|b):\s*(\d+(?:\.\d+)?)')
             part_b_matches = part_b_pattern.findall(response_text)
-            
             part_b_dict = {}
             for match in part_b_matches:
                 q_num = int(match[0])
@@ -120,7 +149,6 @@ ANSWER SCRIPT:
                 score = float(match[2])
                 if 11 <= q_num <= 15:
                     key = f"{q_num}{sub_q}"
-                    
                     if key in part_b_dict:
                         part_b_dict[key] = max(part_b_dict[key], score)
                     else:
@@ -131,7 +159,6 @@ ANSWER SCRIPT:
                     key = f"{q}{sub}"
                     val = part_b_dict.get(key, 0.0)
                     part_b_scores.append(max(0.0, min(val, 10.0)))
-
             return part_a_scores + part_b_scores
 
         elif pattern_type == "pattern2":
@@ -144,23 +171,19 @@ ANSWER SCRIPT:
                 idx = ord(sub) - ord('a')
                 part_a_scores[idx] = max(0.0, min(score, 1.0))
             
-      
             part_b_pattern = re.compile(r'q([2-7]):\s*(\d+(?:\.\d+)?)')
             part_b_matches = part_b_pattern.findall(response_text)
-           
             part_b_dict = {str(q): 0.0 for q in range(2, 8)}
             for match in part_b_matches:
                 q = match[0]
                 score = float(match[1])
                 part_b_dict[q] = max(0.0, min(score, 10.0))
-            
             part_b_scores = [part_b_dict[str(q)] for q in range(2, 8)]
             return part_a_scores + part_b_scores
 
     except Exception as e:
         return f"Evaluation error: {str(e)}"
 
-@app.route('/')
 @app.route('/dash.html', methods=['GET', 'POST'])
 def dash():
     if request.method == 'POST':
@@ -170,20 +193,24 @@ def dash():
         a_paper = request.files['answerScript']
 
         if q_paper and a_paper:
-            q_paper_filename = os.path.join(UPLOAD_FOLDER, q_paper.filename)
-            a_paper_filename = os.path.join(UPLOAD_FOLDER, a_paper.filename)
-            q_paper.save(q_paper_filename)
-            a_paper.save(a_paper_filename)
-
+            s3 = get_s3_client()
+            bucket_name = os.getenv('S3_BUCKET')
+            # Create S3 keys (you can add a timestamp or unique identifier for production)
+            q_paper_key = f"uploads/{q_paper.filename}"
+            a_paper_key = f"uploads/{a_paper.filename}"
+            # Upload files to S3
+            s3.upload_fileobj(q_paper, bucket_name, q_paper_key, ExtraArgs={'ContentType': q_paper.content_type})
+            s3.upload_fileobj(a_paper, bucket_name, a_paper_key, ExtraArgs={'ContentType': a_paper.content_type})
+            
+            # Save the S3 keys in your database
             cursor = mysql.connection.cursor()
             cursor.execute("INSERT INTO paper (stu_name, stu_roll, questionpaper, answerscript, created_at) VALUES (%s, %s, %s, %s, %s)",
-                           (stu_name, stu_roll, q_paper.filename, a_paper.filename, datetime.now()))
+                           (stu_name, stu_roll, q_paper_key, a_paper_key, datetime.now()))
             mysql.connection.commit()
             cursor.close()
 
             flash('File successfully uploaded')
             return redirect(url_for('result'))
-
     return render_template('dash.html')
 
 @app.route('/result', methods=['GET', 'POST'])
@@ -194,28 +221,28 @@ def result():
     cursor.close()
 
     if result_data:
-        questionpaper_filename = result_data[0]
-        answerscript_filename = result_data[1]
+        q_paper_key = result_data[0]
+        a_paper_key = result_data[1]
         stu_roll = result_data[2]
 
-        questionpaper_path = os.path.join(UPLOAD_FOLDER, questionpaper_filename)
-        answerscript_path = os.path.join(UPLOAD_FOLDER, answerscript_filename)
-
-        questions = extract_text_from_pdf(questionpaper_path)
-        answers = extract_text_from_pdf(answerscript_path)
+        questions = extract_text_from_pdf_s3(q_paper_key)
+        answers = extract_text_from_pdf_s3(a_paper_key)
 
         pattern_type = determine_pattern(questions)
         scores = gpt(questions, answers, pattern_type=pattern_type)
         if isinstance(scores, str):
             flash(scores)
             return redirect(url_for('dash'))
+
+        # Generate a presigned URL for the answer script PDF for display in the iframe
+        answerscript_url = get_s3_presigned_url(a_paper_key)
     else:
         flash('No files found for processing')
         return redirect(url_for('dash'))
 
     return render_template('result.html', 
                            scores=scores, 
-                           answerscript_filename=answerscript_filename,
+                           answerscript_url=answerscript_url,
                            stu_roll=stu_roll,
                            pattern_type=pattern_type)
 
@@ -227,8 +254,8 @@ def submit_scores():
         total_score = sum(scores)
 
         cursor = mysql.connection.cursor()
-        cursor.execute("INSERT INTO result (Roll_no,score) VALUES (%s, %s)", 
-                      (roll_no, total_score))
+        cursor.execute("INSERT INTO result (Roll_no, score) VALUES (%s, %s)", 
+                       (roll_no, total_score))
         mysql.connection.commit()
         cursor.close()
 
@@ -237,31 +264,6 @@ def submit_scores():
     except Exception as e:
         flash(f'Error submitting scores: {str(e)}')
         return redirect(url_for('dash'))
-
-def extract_text_from_pdf(pdf_path):
-    images = convert_from_path(pdf_path)
-    text = ''
-    for image in images:
-        text += extract_text_from_image(image)
-    return text
-
-def extract_text_from_image(image):
-    client = boto3.client(
-        'textract',
-        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-        region_name='us-east-1'
-    )
-
-    image_byte_array = io.BytesIO()
-    image.save(image_byte_array, format='PNG')
-    content = image_byte_array.getvalue()
-
-    response = client.detect_document_text(Document={'Bytes': content})
-    blocks = response['Blocks']
-    texts = [block['Text'] for block in blocks if block['BlockType'] == 'LINE']
-
-    return "\n".join(texts)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5001)), debug=True)
