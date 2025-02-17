@@ -1,2 +1,7 @@
-Flask==2.0.1
-gunicorn==20.1.0
+Flask==2.3.2
+Flask-MySQLdb==1.0.1
+google-generativeai==0.2.2
+pdf2image==1.16.0
+Pillow==10.0.0
+boto3==1.30.0
+python-dotenv==1.0.0
