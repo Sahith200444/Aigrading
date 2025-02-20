@@ -258,12 +258,14 @@ def yearselection():
         return redirect(url_for('index'))
     
     if request.method == "POST":
-        # Here, you can process the selected values if needed.
-        # For now, we simply redirect to the dashboard.
-        # Example: year = request.form.get('year'), branch = request.form.get('branch'), etc.
-        return redirect(url_for('result'))
+        year = request.form.get('year')
+        branch = request.form.get('branch')
+        section = request.form.get('section')
+        # Redirect to /result with the selected criteria as query parameters.
+        return redirect(url_for('result', year=year, branch=branch, section=section))
     
     return render_template('yearselection.html')
+
 
 
 @app.route('/dash.html', methods=['GET', 'POST'])
@@ -305,36 +307,68 @@ def dash():
 
 @app.route('/result', methods=['GET', 'POST'])
 def result():
+    # Get the selected criteria from the query parameters
+    year = request.args.get('year')
+    branch = request.args.get('branch')
+    section = request.args.get('section')
+    selected_roll = request.args.get('roll_no')
+
+    if not (year and branch and section):
+        flash("Year, branch, and section are required.")
+        return redirect(url_for('dash'))
+    
     cursor = mysql.connection.cursor()
-    cursor.execute("SELECT questionpaper, answerscript, stu_roll FROM paper ORDER BY created_at DESC LIMIT 1")
-    result_data = cursor.fetchone()
+    cursor.execute(
+        "SELECT questionpaper, answerscript, stu_roll FROM paper WHERE year=%s AND branch=%s AND section=%s ORDER BY created_at DESC",
+        (year, branch, section)
+    )
+    records = cursor.fetchall()
     cursor.close()
 
-    if result_data:
-        q_paper_key = result_data[0]
-        a_paper_key = result_data[1]
-        stu_roll = result_data[2]
-
-        questions = extract_text_from_pdf_s3(q_paper_key)
-        answers = extract_text_from_pdf_s3(a_paper_key)
-
-        pattern_type = determine_pattern(questions)
-        scores = gpt(questions, answers, pattern_type=pattern_type)
-        if isinstance(scores, str):
-            flash(scores)
-            return redirect(url_for('dash'))
-        
-        # Generate a presigned URL for the answer script PDF for display in the iframe
-        answerscript_url = get_s3_presigned_url(a_paper_key)
-    else:
-        flash('No files found for processing')
+    if not records:
+        flash('No records found for the selected criteria')
         return redirect(url_for('dash'))
+
+    # Build a list of roll numbers for the sidebar.
+    roll_numbers = [record[2] for record in records]
+
+    # Determine which record to display.
+    record_to_display = None
+    if selected_roll:
+        for record in records:
+            if record[2] == selected_roll:
+                record_to_display = record
+                break
+    if not record_to_display:
+        record_to_display = records[0]
+
+    q_paper_key = record_to_display[0]
+    a_paper_key = record_to_display[1]
+    stu_roll = record_to_display[2]
+
+    # Extract texts from PDFs.
+    questions = extract_text_from_pdf_s3(q_paper_key)
+    answers = extract_text_from_pdf_s3(a_paper_key)
+
+    pattern_type = determine_pattern(questions)
+    scores = gpt(questions, answers, pattern_type=pattern_type)
+    if isinstance(scores, str):
+        flash(scores)
+        return redirect(url_for('dash'))
+
+    # Generate a presigned URL for the answer script.
+    answerscript_url = get_s3_presigned_url(a_paper_key)
 
     return render_template('result.html', 
                            scores=scores, 
                            answerscript_url=answerscript_url,
                            stu_roll=stu_roll,
-                           pattern_type=pattern_type)
+                           pattern_type=pattern_type,
+                           roll_numbers=roll_numbers,
+                           year=year,
+                           branch=branch,
+                           section=section)
+
 
 @app.route('/submit_scores', methods=['POST'])
 def submit_scores():
