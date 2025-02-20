@@ -261,7 +261,7 @@ def yearselection():
         # Here, you can process the selected values if needed.
         # For now, we simply redirect to the dashboard.
         # Example: year = request.form.get('year'), branch = request.form.get('branch'), etc.
-        return redirect(url_for('dash'))
+        return redirect(url_for('result'))
     
     return render_template('yearselection.html')
 
@@ -297,7 +297,7 @@ def dash():
             cursor.close()
 
             flash('File successfully uploaded')
-            return redirect(url_for('result'))
+            return redirect(url_for('dash'))
     return render_template('dash.html')
 
 @app.route('/result', methods=['GET', 'POST'])
