@@ -184,7 +184,60 @@ ANSWER SCRIPT:
     except Exception as e:
         return f"Evaluation error: {str(e)}"
 
-@app.route('/')
+# ---------- Authentication Routes ----------
+
+@app.route('/', methods=['GET'])
+def index():
+    # Render the combined login/registration page
+    return render_template('auth.html')
+
+@app.route('/login', methods=['POST'])
+def do_login():
+    email = request.form.get('loginEmail')
+    password = request.form.get('loginPassword')
+    
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT * FROM login WHERE email=%s AND password=%s", (email, password))
+    user = cursor.fetchone()
+    cursor.close()
+    
+    if user:
+        # Successful login; redirect to dashboard
+        return redirect(url_for('dash'))
+    else:
+        flash('Invalid credentials. Please try again.')
+        return redirect(url_for('index'))
+
+@app.route('/register', methods=['POST'])
+def do_register():
+    full_name = request.form.get('fullName')
+    email = request.form.get('registerEmail')
+    password = request.form.get('registerPassword')
+    confirmPassword = request.form.get('confirmPassword')
+    
+    if password != confirmPassword:
+        flash("Passwords do not match.")
+        return redirect(url_for('index'))
+    
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT * FROM login WHERE email=%s", (email,))
+    user = cursor.fetchone()
+    
+    if user:
+        flash("User already exists with that email.")
+        cursor.close()
+        return redirect(url_for('index'))
+    
+    cursor.execute("INSERT INTO login (full_name, email, password) VALUES (%s, %s, %s)",
+                   (full_name, email, password))
+    mysql.connection.commit()
+    cursor.close()
+    
+    flash("Registration successful. Please login.")
+    return redirect(url_for('index'))
+
+# ---------- Existing Routes ----------
+
 @app.route('/dash.html', methods=['GET', 'POST'])
 def dash():
     if request.method == 'POST':
