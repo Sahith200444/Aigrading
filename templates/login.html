@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI powered Exam Grading System - Login/Register</title>
+  <style>
+    /* Global Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #ff7e5f, #feb47b);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 40px;
+      border-radius: 10px;
+      width: 350px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .header h1 {
+      font-size: 24px;
+      color: #333;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      color: #333;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .btn {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .link {
+      text-align: center;
+      margin-top: 15px;
+    }
+    .link a {
+      text-decoration: none;
+    }
+    /* Section Visibility */
+    .form-section {
+      display: none;
+    }
+    .form-section.active {
+      display: block;
+    }
+    /* Login Section Specific Styles */
+    .login-section .btn {
+      background: #ff7e5f;
+    }
+    .login-section .btn:hover {
+      background: #feb47b;
+    }
+    .login-section .link a {
+      color: #ff7e5f;
+    }
+    /* Register Section Specific Styles */
+    .register-section .btn {
+      background: #43cea2;
+    }
+    .register-section .btn:hover {
+      background: #185a9d;
+    }
+    .register-section .link a {
+      color: #43cea2;
+    }
+  </style>
+  <script>
+    function showSection(sectionId) {
+      document.getElementById('loginSection').classList.remove('active');
+      document.getElementById('registerSection').classList.remove('active');
+      document.getElementById(sectionId).classList.add('active');
+    }
+    window.onload = function(){
+      showSection('loginSection'); // Show login section by default
+    }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <!-- Login Section -->
+    <div id="loginSection" class="form-section login-section">
+      <div class="header">
+        <h1>AI powered Exam Grading System</h1>
+      </div>
+      <form>
+        <div class="form-group">
+          <label for="loginEmail">Email or Username</label>
+          <input type="text" id="loginEmail" name="loginEmail" placeholder="Enter your email or username" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" name="loginPassword" placeholder="Enter your password" required>
+        </div>
+        <button type="submit" class="btn">Login</button>
+      </form>
+      <div class="link">
+        <p>Don't have an account? <a href="javascript:showSection('registerSection');">Register here</a></p>
+      </div>
+    </div>
+    <!-- Register Section -->
+    <div id="registerSection" class="form-section register-section">
+      <div class="header">
+        <h1>AI powered Exam Grading System</h1>
+      </div>
+      <form>
+        <div class="form-group">
+          <label for="fullName">Full Name</label>
+          <input type="text" id="fullName" name="fullName" placeholder="Enter your full name" required>
+        </div>
+        <div class="form-group">
+          <label for="registerEmail">Email</label>
+          <input type="email" id="registerEmail" name="registerEmail" placeholder="Enter your email address" required>
+        </div>
+        <div class="form-group">
+          <label for="registerPassword">Password</label>
+          <input type="password" id="registerPassword" name="registerPassword" placeholder="Enter your password" required>
+        </div>
+        <div class="form-group">
+          <label for="confirmPassword">Confirm Password</label>
+          <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Re-enter your password" required>
+        </div>
+        <button type="submit" class="btn">Register</button>
+      </form>
+      <div class="link">
+        <p>Already have an account? <a href="javascript:showSection('loginSection');">Login here</a></p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
