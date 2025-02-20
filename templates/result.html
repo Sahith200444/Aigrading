@@ -62,111 +62,157 @@
           font-size: 1.1em;
           letter-spacing: 0.5px;
       }
+      .sidebar {
+          margin-bottom: 30px;
+      }
   </style>
 </head>
 <body>
   <div class="container container-main">
       <div class="row">
-          <!-- Answer Script Viewer -->
-          <div class="col-md-6">
-              <h3 class="part-title">Answer Script</h3>
-              <div class="pdf-viewer">
-                  <iframe src="{{ answerscript_url }}" 
-                          width="100%" 
-                          height="100%"
-                          style="border:none;"></iframe>
+          <!-- Sidebar for Roll Numbers -->
+          <div class="col-md-3">
+              <div class="sidebar">
+                  <h4 class="part-title">Roll Numbers</h4>
+                  <ul class="list-group">
+                      {% for roll in roll_numbers %}
+                      <li class="list-group-item" onclick="loadRoll('{{ roll }}')" style="cursor: pointer;">
+                          {{ roll }}
+                      </li>
+                      {% endfor %}
+                  </ul>
               </div>
           </div>
 
-          <!-- Scores Section -->
-          <div class="col-md-6">
-              <form method="post" action="{{ url_for('submit_scores') }}">
-                  <input type="hidden" name="roll_no" value="{{ stu_roll }}">
-
-                  {% if pattern_type == "pattern1" %}
-                  <!-- Pattern 1: Part-A (10 questions) and Part-B (Q11-Q15 with a/b subquestions) -->
-                  <div class="score-section">
-                      <h4 class="part-title">Part-A Scores (1 Mark Each)</h4>
-                      <div class="subquestion-row">
-                          {% for i in range(10) %}
-                          <div>
-                              <div class="score-label">Question {{ i+1 }}:</div>
-                              <input type="number" class="score-input" 
-                                     name="scores" 
-                                     value="{{ scores[i] }}"
-                                     min="0" max="1" step="0.5" required>
-                          </div>
-                          {% endfor %}
+          <!-- Main Content for Answer Script and Scores -->
+          <div class="col-md-9">
+              <div class="row">
+                  <!-- Answer Script Viewer -->
+                  <div class="col-md-6">
+                      <h3 class="part-title">Answer Script</h3>
+                      <div class="pdf-viewer">
+                          <iframe id="answerscriptIframe" src="{{ answerscript_url }}" 
+                                  width="100%" 
+                                  height="100%"
+                                  style="border:none;"></iframe>
                       </div>
                   </div>
 
-                  <div class="score-section">
-                      <h4 class="part-title">Part-B Scores (10 Marks Per Subquestion)</h4>
-                      {% for q_num in range(11, 16) %}
-                      <div class="question-group">
-                          <h5>Question {{ q_num }}</h5>
-                          <div class="subquestion-row">
-                              {% set base_index = 10 + ((q_num - 11) * 2) %}
-                              <div>
-                                  <div class="score-label">a) Score:</div>
-                                  <input type="number" class="score-input" 
-                                         name="scores" 
-                                         value="{{ scores[base_index] }}"
-                                         min="0" max="10" step="0.5">
-                              </div>
-                              <div>
-                                  <div class="score-label">b) Score:</div>
-                                  <input type="number" class="score-input" 
-                                         name="scores" 
-                                         value="{{ scores[base_index + 1] }}"
-                                         min="0" max="10" step="0.5">
+                  <!-- Scores Section -->
+                  <div class="col-md-6">
+                      <form method="post" action="{{ url_for('submit_scores') }}">
+                          <input type="hidden" id="rollNoHidden" name="roll_no" value="{{ stu_roll }}">
+
+                          {% if pattern_type == "pattern1" %}
+                          <!-- Pattern 1: Part-A (10 questions) and Part-B (Q11-Q15 with a/b subquestions) -->
+                          <div class="score-section">
+                              <h4 class="part-title">Part-A Scores (1 Mark Each)</h4>
+                              <div class="subquestion-row">
+                                  {% for i in range(10) %}
+                                  <div>
+                                      <div class="score-label">Question {{ i+1 }}:</div>
+                                      <input type="number" class="score-input" 
+                                             name="scores" 
+                                             value="{{ scores[i] }}"
+                                             min="0" max="1" step="0.5" required>
+                                  </div>
+                                  {% endfor %}
                               </div>
                           </div>
-                      </div>
-                      {% endfor %}
-                  </div>
-                  {% elif pattern_type == "pattern2" %}
-                  <!-- Pattern 2: Part-A is 1 question with 10 subquestions (a-j) and Part-B are questions 2-7 -->
-                  <div class="score-section">
-                      <h4 class="part-title">Part-A Score (1 Question with 10 Subquestions)</h4>
-                      <div class="subquestion-row">
-                          {% set subs = ['a','b','c','d','e','f','g','h','i','j'] %}
-                          {% for i in range(10) %}
-                          <div>
-                              <div class="score-label">Subquestion {{ subs[i] }}:</div>
-                              <input type="number" class="score-input" 
-                                     name="scores" 
-                                     value="{{ scores[i] }}"
-                                     min="0" max="1" step="0.5" required>
-                          </div>
-                          {% endfor %}
-                      </div>
-                  </div>
 
-                  <div class="score-section">
-                      <h4 class="part-title">Part-B Scores (Questions 2 to 7)</h4>
-                      <div class="subquestion-row">
-                          {% for q_num in range(2, 8) %}
-                          <div class="question-group">
-                              <div class="score-label">Question {{ q_num }}:</div>
-                              <input type="number" class="score-input" 
-                                     name="scores" 
-                                     value="{{ scores[10 + (q_num - 2)] }}"
-                                     min="0" max="10" step="0.5">
+                          <div class="score-section">
+                              <h4 class="part-title">Part-B Scores (10 Marks Per Subquestion)</h4>
+                              {% for q_num in range(11, 16) %}
+                              <div class="question-group">
+                                  <h5>Question {{ q_num }}</h5>
+                                  <div class="subquestion-row">
+                                      {% set base_index = 10 + ((q_num - 11) * 2) %}
+                                      <div>
+                                          <div class="score-label">a) Score:</div>
+                                          <input type="number" class="score-input" 
+                                                 name="scores" 
+                                                 value="{{ scores[base_index] }}"
+                                                 min="0" max="10" step="0.5">
+                                      </div>
+                                      <div>
+                                          <div class="score-label">b) Score:</div>
+                                          <input type="number" class="score-input" 
+                                                 name="scores" 
+                                                 value="{{ scores[base_index + 1] }}"
+                                                 min="0" max="10" step="0.5">
+                                      </div>
+                                  </div>
+                              </div>
+                              {% endfor %}
                           </div>
-                          {% endfor %}
-                      </div>
-                  </div>
-                  {% endif %}
+                          {% elif pattern_type == "pattern2" %}
+                          <!-- Pattern 2: Part-A is 1 question with 10 subquestions (a-j) and Part-B are questions 2-7 -->
+                          <div class="score-section">
+                              <h4 class="part-title">Part-A Score (1 Question with 10 Subquestions)</h4>
+                              <div class="subquestion-row">
+                                  {% set subs = ['a','b','c','d','e','f','g','h','i','j'] %}
+                                  {% for i in range(10) %}
+                                  <div>
+                                      <div class="score-label">Subquestion {{ subs[i] }}:</div>
+                                      <input type="number" class="score-input" 
+                                             name="scores" 
+                                             value="{{ scores[i] }}"
+                                             min="0" max="1" step="0.5" required>
+                                  </div>
+                                  {% endfor %}
+                              </div>
+                          </div>
 
-                  <div class="text-center mt-5">
-                      <button type="submit" class="btn btn-primary submit-btn">
-                          Submit Final Scores
-                      </button>
+                          <div class="score-section">
+                              <h4 class="part-title">Part-B Scores (Questions 2 to 7)</h4>
+                              <div class="subquestion-row">
+                                  {% for q_num in range(2, 8) %}
+                                  <div class="question-group">
+                                      <div class="score-label">Question {{ q_num }}:</div>
+                                      <input type="number" class="score-input" 
+                                             name="scores" 
+                                             value="{{ scores[10 + (q_num - 2)] }}"
+                                             min="0" max="10" step="0.5">
+                                  </div>
+                                  {% endfor %}
+                              </div>
+                          </div>
+                          {% endif %}
+
+                          <div class="text-center mt-5">
+                              <button type="submit" class="btn btn-primary submit-btn">
+                                  Submit Final Scores
+                              </button>
+                          </div>
+                      </form>
                   </div>
-              </form>
+              </div>
           </div>
       </div>
   </div>
+
+  <!-- JavaScript to handle roll number selection -->
+  <script>
+      function loadRoll(rollNo) {
+          // Update the hidden roll number field.
+          document.getElementById('rollNoHidden').value = rollNo;
+
+          // Update the answer script iframe source.
+          var iframe = document.getElementById('answerscriptIframe');
+          iframe.src = '/answer_script/' + rollNo;
+
+          // Optionally, update the scores via AJAX.
+          fetch('/get_scores/' + rollNo)
+              .then(response => response.json())
+              .then(data => {
+                  // Assuming data.scores is an array matching the number of score inputs.
+                  var scoreInputs = document.getElementsByClassName('score-input');
+                  for (var i = 0; i < scoreInputs.length; i++) {
+                      scoreInputs[i].value = data.scores[i];
+                  }
+              })
+              .catch(error => console.error('Error loading scores:', error));
+      }
+  </script>
 </body>
 </html>
