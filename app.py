@@ -375,19 +375,43 @@ def submit_scores():
     try:
         scores = list(map(float, request.form.getlist('scores')))
         roll_no = request.form['roll_no']
+        year = request.form.get('year')
+        branch = request.form.get('branch')
+        section = request.form.get('section')
         total_score = sum(scores)
 
         cursor = mysql.connection.cursor()
         cursor.execute("INSERT INTO result (Roll_no, score) VALUES (%s, %s)", 
                        (roll_no, total_score))
         mysql.connection.commit()
+
+        # Retrieve all roll numbers for the selected criteria.
+        cursor.execute(
+            "SELECT stu_roll FROM paper WHERE year=%s AND branch=%s AND section=%s ORDER BY created_at DESC",
+            (year, branch, section)
+        )
+        records = cursor.fetchall()
         cursor.close()
 
-        flash('Scores successfully submitted')
-        return redirect(url_for('result'))
+        roll_numbers = [record[0] for record in records]
+
+        # Find the current roll number's index.
+        try:
+            current_index = roll_numbers.index(roll_no)
+        except ValueError:
+            current_index = -1
+
+        # If there's a next roll, redirect to its result page.
+        if current_index != -1 and current_index + 1 < len(roll_numbers):
+            next_roll = roll_numbers[current_index + 1]
+            flash('Scores successfully submitted')
+            return redirect(url_for('result', year=year, branch=branch, section=section, roll_no=next_roll))
+        else:
+            flash('All roll numbers have been scored. Redirecting to year selection.')
+            return redirect(url_for('yearselection'))
     except Exception as e:
         flash(f'Error submitting scores: {str(e)}')
-        return redirect(url_for('result'))
+        return redirect(url_for('dash'))
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5001)), debug=True)
