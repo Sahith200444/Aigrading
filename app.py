@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash,session
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_mysqldb import MySQL
 import google.generativeai as genai
 from datetime import datetime
@@ -199,10 +199,11 @@ def do_login():
     cursor = mysql.connection.cursor()
     cursor.execute("SELECT * FROM login WHERE email=%s AND password=%s", (email, password))
     user = cursor.fetchone()
-    session['username']=user[0]
     cursor.close()
     
     if user:
+        # Set session data (using full_name as username)
+        session['username'] = user[0]
         # Successful login; redirect to dashboard
         return redirect(url_for('dash'))
     else:
@@ -237,11 +238,22 @@ def do_register():
     flash("Registration successful. Please login.")
     return redirect(url_for('index'))
 
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    flash("You have been logged out.")
+    return redirect(url_for('index'))
+
 # ---------- Existing Routes ----------
 
 @app.route('/dash.html', methods=['GET', 'POST'])
 def dash():
-    if request.method == 'POST' and logged in session:
+    # Check if the user is logged in via session
+    if 'username' not in session:
+        flash("Please log in to access the dashboard.")
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
         stu_name = request.form['studentName']
         stu_roll = request.form['rollNo']
         q_paper = request.files['questionPaper']
@@ -288,7 +300,7 @@ def result():
         if isinstance(scores, str):
             flash(scores)
             return redirect(url_for('dash'))
-
+        
         # Generate a presigned URL for the answer script PDF for display in the iframe
         answerscript_url = get_s3_presigned_url(a_paper_key)
     else:
