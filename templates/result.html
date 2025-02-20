@@ -76,7 +76,9 @@
                   <h4 class="part-title">Roll Numbers</h4>
                   <ul class="list-group">
                       {% for roll in roll_numbers %}
-                      <li class="list-group-item" onclick="loadRoll('{{ roll }}')" style="cursor: pointer;">
+                      <li class="list-group-item {% if roll == stu_roll %}active{% endif %}" 
+                          onclick="loadRoll('{{ roll }}')" 
+                          style="cursor: pointer;">
                           {{ roll }}
                       </li>
                       {% endfor %}
@@ -104,7 +106,7 @@
                           <input type="hidden" id="rollNoHidden" name="roll_no" value="{{ stu_roll }}">
 
                           {% if pattern_type == "pattern1" %}
-                          <!-- Pattern 1: Part-A (10 questions) and Part-B (Q11-Q15 with a/b subquestions) -->
+                          <!-- Pattern 1: Part-A (10 questions) and Part-B (Q11-Q15 with subquestions a and b) -->
                           <div class="score-section">
                               <h4 class="part-title">Part-A Scores (1 Mark Each)</h4>
                               <div class="subquestion-row">
@@ -146,7 +148,7 @@
                               {% endfor %}
                           </div>
                           {% elif pattern_type == "pattern2" %}
-                          <!-- Pattern 2: Part-A is 1 question with 10 subquestions (a-j) and Part-B are questions 2-7 -->
+                          <!-- Pattern 2: Part-A (1 question with 10 subquestions a-j) and Part-B (Questions 2-7) -->
                           <div class="score-section">
                               <h4 class="part-title">Part-A Score (1 Question with 10 Subquestions)</h4>
                               <div class="subquestion-row">
@@ -194,24 +196,10 @@
   <!-- JavaScript to handle roll number selection -->
   <script>
       function loadRoll(rollNo) {
-          // Update the hidden roll number field.
-          document.getElementById('rollNoHidden').value = rollNo;
-
-          // Update the answer script iframe source.
-          var iframe = document.getElementById('answerscriptIframe');
-          iframe.src = '/answer_script/' + rollNo;
-
-          // Optionally, update the scores via AJAX.
-          fetch('/get_scores/' + rollNo)
-              .then(response => response.json())
-              .then(data => {
-                  // Assuming data.scores is an array matching the number of score inputs.
-                  var scoreInputs = document.getElementsByClassName('score-input');
-                  for (var i = 0; i < scoreInputs.length; i++) {
-                      scoreInputs[i].value = data.scores[i];
-                  }
-              })
-              .catch(error => console.error('Error loading scores:', error));
+          // Update the URL query parameters with the selected roll number.
+          var params = new URLSearchParams(window.location.search);
+          params.set('roll_no', rollNo);
+          window.location.search = params.toString();
       }
   </script>
 </body>
