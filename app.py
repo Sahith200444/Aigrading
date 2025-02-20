@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash,session
 from flask_mysqldb import MySQL
 import google.generativeai as genai
 from datetime import datetime
@@ -199,6 +199,7 @@ def do_login():
     cursor = mysql.connection.cursor()
     cursor.execute("SELECT * FROM login WHERE email=%s AND password=%s", (email, password))
     user = cursor.fetchone()
+    session['username']=user[0]
     cursor.close()
     
     if user:
@@ -240,7 +241,7 @@ def do_register():
 
 @app.route('/dash.html', methods=['GET', 'POST'])
 def dash():
-    if request.method == 'POST':
+    if request.method == 'POST' and logged in session:
         stu_name = request.form['studentName']
         stu_roll = request.form['rollNo']
         q_paper = request.files['questionPaper']
