@@ -354,7 +354,7 @@ def result():
     scores = gpt(questions, answers, pattern_type=pattern_type)
     if isinstance(scores, str):
         flash(scores)
-        return redirect(url_for('dash'))
+        return redirect(url_for('result'))
 
     # Generate a presigned URL for the answer script.
     answerscript_url = get_s3_presigned_url(a_paper_key)
