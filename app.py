@@ -186,9 +186,11 @@ ANSWER SCRIPT:
 
 # ---------- Authentication Routes ----------
 
+# ---------- Authentication Routes ----------
+
 @app.route('/', methods=['GET'])
 def index():
-    # Render the combined login/registration page
+    # Render the combined login/registration page (auth.html)
     return render_template('auth.html')
 
 @app.route('/login', methods=['POST'])
@@ -204,8 +206,12 @@ def do_login():
     if user:
         # Set session data (using full_name as username)
         session['username'] = user[0]
-        # Successful login; redirect to dashboard
-        return redirect(url_for('dash'))
+        # Check if the credentials are exactly M Sahith Reddy, msahithreddy5@gmail.com
+        # (If needed, you could also check for the roll number "12" if that data is available)
+        if user[0] == "M Sahith Reddy" and user[1] == "msahithreddy5@gmail.com":
+            return redirect(url_for('dash'))
+        else:
+            return redirect(url_for('yearselection'))
     else:
         flash('Invalid credentials. Please try again.')
         return redirect(url_for('index'))
@@ -244,7 +250,21 @@ def logout():
     flash("You have been logged out.")
     return redirect(url_for('index'))
 
-# ---------- Existing Routes ----------
+# New Year Selection Route
+@app.route('/yearselection', methods=['GET', 'POST'])
+def yearselection():
+    if 'username' not in session:
+        flash("Please log in to access this page.")
+        return redirect(url_for('index'))
+    
+    if request.method == "POST":
+        # Here, you can process the selected values if needed.
+        # For now, we simply redirect to the dashboard.
+        # Example: year = request.form.get('year'), branch = request.form.get('branch'), etc.
+        return redirect(url_for('dash'))
+    
+    return render_template('yearselection.html')
+
 
 @app.route('/dash.html', methods=['GET', 'POST'])
 def dash():
