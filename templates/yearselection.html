@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Select your Class</title>
+  <style>
+     body {
+         font-family: Arial, sans-serif;
+         background: #f5f5f5;
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         height: 100vh;
+         margin: 0;
+     }
+     .container {
+         background: #fff;
+         padding: 30px;
+         border-radius: 8px;
+         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+         text-align: center;
+     }
+     h1 {
+         margin-bottom: 20px;
+     }
+     .dropdown-group {
+         margin-bottom: 15px;
+         text-align: left;
+     }
+     label {
+         display: block;
+         margin-bottom: 5px;
+         font-weight: bold;
+     }
+     select {
+         width: 100%;
+         padding: 8px;
+         border: 1px solid #ccc;
+         border-radius: 4px;
+     }
+     .btn {
+         background: #007bff;
+         color: #fff;
+         border: none;
+         padding: 10px 20px;
+         border-radius: 4px;
+         cursor: pointer;
+         font-size: 16px;
+     }
+     .btn:hover {
+         background: #0056b3;
+     }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Select your Class</h1>
+    <form action="/yearselection" method="post">
+      <div class="dropdown-group">
+        <label for="year">Year</label>
+        <select id="year" name="year" required>
+          <option value="">Select Year</option>
+          <option value="I">I</option>
+          <option value="II">II</option>
+          <option value="III">III</option>
+          <option value="IV">IV</option>
+        </select>
+      </div>
+      <div class="dropdown-group">
+        <label for="branch">Branch</label>
+        <select id="branch" name="branch" required>
+          <option value="">Select Branch</option>
+          <option value="IT">IT</option>
+          <option value="CSE">CSE</option>
+          <option value="ECE">ECE</option>
+          <option value="Civil">Civil</option>
+          <option value="AI">AI</option>
+        </select>
+      </div>
+      <div class="dropdown-group">
+        <label for="section">Section</label>
+        <select id="section" name="section" required>
+          <option value="">Select Section</option>
+          <option value="a">a</option>
+          <option value="b">b</option>
+          <option value="c">c</option>
+        </select>
+      </div>
+      <button type="submit" class="btn">Submit</button>
+    </form>
+  </div>
+</body>
+</html>
