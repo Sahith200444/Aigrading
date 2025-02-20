@@ -384,10 +384,10 @@ def submit_scores():
         cursor.close()
 
         flash('Scores successfully submitted')
-        return redirect(url_for('dash'))
+        return redirect(url_for('result'))
     except Exception as e:
         flash(f'Error submitting scores: {str(e)}')
-        return redirect(url_for('dash'))
+        return redirect(url_for('result'))
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5001)), debug=True)
