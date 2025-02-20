@@ -276,6 +276,9 @@ def dash():
     if request.method == 'POST':
         stu_name = request.form['studentName']
         stu_roll = request.form['rollNo']
+        year = request.form['year']
+        branch = request.form['branch']
+        section = request.form['section']
         q_paper = request.files['questionPaper']
         a_paper = request.files['answerScript']
 
@@ -291,8 +294,8 @@ def dash():
             
             # Save the S3 keys in your database
             cursor = mysql.connection.cursor()
-            cursor.execute("INSERT INTO paper (stu_name, stu_roll, questionpaper, answerscript, created_at) VALUES (%s, %s, %s, %s, %s)",
-                           (stu_name, stu_roll, q_paper_key, a_paper_key, datetime.now()))
+            cursor.execute("INSERT INTO paper (stu_name, stu_roll, year, branch, section, questionpaper, answerscript, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                           (stu_name, stu_roll, year, branch, section, q_paper_key, a_paper_key, datetime.now()))
             mysql.connection.commit()
             cursor.close()
 
