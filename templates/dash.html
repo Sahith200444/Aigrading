@@ -13,12 +13,9 @@
         .form-group {
             margin-bottom: 15px;
         }
-        .btn-primary {
+        .btn-primary, .btn-success {
             display: block;
             border-radius: 0px;
-            box-shadow: 0px 4px 6px 2px rgba(0,0,0,0.2);
-        }
-        .btn-success {
             box-shadow: 0px 4px 6px 2px rgba(0,0,0,0.2);
         }
         .header {
@@ -42,6 +39,31 @@
                     <div class="form-group">
                         <label for="rollNo">Roll No of the Student</label>
                         <input type="text" class="form-control" id="rollNo" name="rollNo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="year">Year</label>
+                        <select class="form-control" id="year" name="year" required>
+                            <option value="">Select Year</option>
+                            <option value="I">I</option>
+                            <option value="II">II</option>
+                            <option value="III">III</option>
+                            <option value="IV">IV</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="branch">Branch</label>
+                        <select class="form-control" id="branch" name="branch" required>
+                            <option value="">Select Branch</option>
+                            <option value="IT">IT</option>
+                            <option value="CSE">CSE</option>
+                            <option value="ECE">ECE</option>
+                            <option value="Civil">Civil</option>
+                            <option value="AI">AI</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="section">Section</label>
+                        <input type="text" class="form-control" id="section" name="section" placeholder="Enter Section (A, B, or C)" required>
                     </div>
                     <div class="form-group">
                         <label for="questionPaper">Upload Question Paper (PDF)</label>
