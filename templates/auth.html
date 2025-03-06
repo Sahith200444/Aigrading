@@ -33,9 +33,9 @@
     /* Container Styles */
     .container {
       background: rgba(255, 255, 255, 0.95);
-      padding: 40px;
+      padding: 50px;
       border-radius: 10px;
-      width: 350px;
+      width: 450px;
       box-shadow: 0 10px 20px rgba(0,0,0,0.25);
       animation: fadeInUp 0.8s ease-out;
     }
@@ -54,7 +54,7 @@
       margin-bottom: 25px;
     }
     .header h1 {
-      font-size: 24px;
+      font-size: 28px;
       color: #333;
     }
     .form-group {
@@ -80,25 +80,49 @@
     }
     .btn {
       width: 100%;
-      padding: 12px;
+      padding: 14px;
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
       color: #fff;
       font-size: 16px;
       cursor: pointer;
       transition: background 0.3s, transform 0.2s;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     .btn:hover {
       transform: translateY(-2px);
     }
-    .link {
-      text-align: center;
-      margin-top: 15px;
+    /* Login Section Specific Styles */
+    .login-section .btn {
+      background: linear-gradient(45deg, #ff6f61, #ffb347);
     }
-    .link a {
+    .login-section .btn:hover {
+      background: linear-gradient(45deg, #ff7e5f, #ffcb7b);
+    }
+    .login-section .link a {
+      color: #ff7e5f;
       text-decoration: none;
       font-weight: bold;
       transition: color 0.3s;
+    }
+    .login-section .link a:hover {
+      color: #ffb347;
+    }
+    /* Register Section Specific Styles */
+    .register-section .btn {
+      background: linear-gradient(45deg, #43cea2, #185a9d);
+    }
+    .register-section .btn:hover {
+      background: linear-gradient(45deg, #5fc3b3, #2575fc);
+    }
+    .register-section .link a {
+      color: #43cea2;
+      text-decoration: none;
+      font-weight: bold;
+      transition: color 0.3s;
+    }
+    .register-section .link a:hover {
+      color: #185a9d;
     }
     /* Form Section Visibility */
     .form-section {
@@ -117,32 +141,6 @@
         opacity: 1;
         transform: translateY(0);
       }
-    }
-    /* Login Specific Styles */
-    .login-section .btn {
-      background: #ff7e5f;
-    }
-    .login-section .btn:hover {
-      background: #feb47b;
-    }
-    .login-section .link a {
-      color: #ff7e5f;
-    }
-    .login-section .link a:hover {
-      color: #feb47b;
-    }
-    /* Register Specific Styles */
-    .register-section .btn {
-      background: #43cea2;
-    }
-    .register-section .btn:hover {
-      background: #185a9d;
-    }
-    .register-section .link a {
-      color: #43cea2;
-    }
-    .register-section .link a:hover {
-      color: #185a9d;
     }
   </style>
   <script>
