@@ -2,149 +2,213 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Select your Class</title>
+  <title>Unique Class Selection</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    /* Global Reset */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    html, body {
-      width: 100%;
-      height: 100%;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    /* Basic resets */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; font-family: 'Segoe UI', sans-serif; }
+    body {
+      background: linear-gradient(135deg, #ff7e5f, #feb47b);
       overflow: hidden;
     }
-    /* Wrapper for header and container */
-    .wrapper {
+    /* Container for full-screen sections */
+    .section-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    /* Full-screen pages */
+    .page-step {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
+      transition: transform 0.6s ease, opacity 0.6s ease;
+      opacity: 0;
     }
-    /* Page Header */
-    .page-header {
-      margin-bottom: 20px;
-      text-align: center;
+    .page-step.active {
+      transform: translateX(-100%);
+      opacity: 1;
     }
-    .page-header h1 {
+    /* Header style on each step */
+    .step-header {
+      font-size: 2.5em;
+      margin-bottom: 30px;
       color: #fff;
-      font-size: 32px;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
     }
-    /* Animated Gradient Background */
-    body {
-      background: linear-gradient(-45deg, #ff7e5f, #feb47b, #43cea2, #185a9d);
-      background-size: 400% 400%;
-      animation: gradientAnimation 15s ease infinite;
+    /* Option cards */
+    .options {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
     }
-    @keyframes gradientAnimation {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-    /* Container Styles */
-    .container {
-      background: rgba(255, 255, 255, 0.95);
-      padding: 50px;
+    .option {
+      background: rgba(255,255,255,0.9);
+      padding: 20px 30px;
       border-radius: 10px;
-      width: 450px;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.25);
-      animation: fadeInUp 0.8s ease-out;
-      text-align: center;
+      font-size: 1.5em;
+      cursor: pointer;
+      transition: transform 0.3s ease, background 0.3s ease;
     }
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    .option:hover {
+      transform: scale(1.05);
+      background: #fff;
     }
-    .dropdown-group {
-      margin-bottom: 15px;
-      text-align: left;
-    }
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: bold;
-      color: #333;
-    }
-    select {
+    /* Navigation buttons (for Previous/Submit) */
+    .nav-buttons {
+      position: absolute;
+      bottom: 40px;
       width: 100%;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      transition: border-color 0.3s;
-      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 40px;
     }
-    select:focus {
-      border-color: #185a9d;
-      outline: none;
-    }
-    .btn {
-      background: linear-gradient(45deg, #6a11cb, #2575fc);
+    .nav-buttons button {
+      background: rgba(0,0,0,0.5);
       color: #fff;
       border: none;
-      padding: 14px 20px;
-      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 1em;
+      border-radius: 5px;
       cursor: pointer;
-      font-size: 16px;
-      transition: background 0.3s, transform 0.2s;
-      width: 100%;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: background 0.3s ease;
     }
-    .btn:hover {
-      background: linear-gradient(45deg, #7a12cd, #2d85fc);
-      transform: translateY(-2px);
+    .nav-buttons button:hover {
+      background: rgba(0,0,0,0.7);
+    }
+    .submit-btn {
+      background: #3498db;
+    }
+    .submit-btn:hover {
+      background: #2980b9;
     }
   </style>
 </head>
 <body>
-  <div class="wrapper">
-    <header class="page-header">
-      <h1>Select your Class</h1>
-    </header>
-    <div class="container">
-      <form action="/yearselection" method="post">
-        <div class="dropdown-group">
-          <label for="year">Year</label>
-          <select id="year" name="year" required>
-            <option value="">Select Year</option>
-            <option value="I">I</option>
-            <option value="II">II</option>
-            <option value="III">III</option>
-            <option value="IV">IV</option>
-          </select>
-        </div>
-        <div class="dropdown-group">
-          <label for="branch">Branch</label>
-          <select id="branch" name="branch" required>
-            <option value="">Select Branch</option>
-            <option value="IT">IT</option>
-            <option value="CSE">CSE</option>
-            <option value="ECE">ECE</option>
-            <option value="Civil">Civil</option>
-            <option value="AI">AI</option>
-          </select>
-        </div>
-        <div class="dropdown-group">
-          <label for="section">Section</label>
-          <select id="section" name="section" required>
-            <option value="">Select Section</option>
-            <option value="a">a</option>
-            <option value="b">b</option>
-            <option value="c">c</option>
-          </select>
-        </div>
-        <button type="submit" class="btn">Submit</button>
-      </form>
+  <div class="section-container">
+    <!-- Step 1: Select Year -->
+    <div class="page-step active" id="step1">
+      <div class="step-header">Select Year</div>
+      <div class="options">
+        <div class="option" data-value="I">I</div>
+        <div class="option" data-value="II">II</div>
+        <div class="option" data-value="III">III</div>
+        <div class="option" data-value="IV">IV</div>
+      </div>
+      <div class="nav-buttons">
+        <!-- No Previous button on first step -->
+        <div></div>
+      </div>
+    </div>
+    <!-- Step 2: Select Branch -->
+    <div class="page-step" id="step2">
+      <div class="step-header">Select Branch</div>
+      <div class="options">
+        <div class="option" data-value="IT">IT</div>
+        <div class="option" data-value="CSE">CSE</div>
+        <div class="option" data-value="ECE">ECE</div>
+        <div class="option" data-value="Civil">Civil</div>
+        <div class="option" data-value="AI">AI</div>
+      </div>
+      <div class="nav-buttons">
+        <button type="button" id="prev2">Previous</button>
+        <!-- No Next button; auto-advance on selection -->
+      </div>
+    </div>
+    <!-- Step 3: Select Section -->
+    <div class="page-step" id="step3">
+      <div class="step-header">Select Section</div>
+      <div class="options">
+        <div class="option" data-value="A">A</div>
+        <div class="option" data-value="B">B</div>
+        <div class="option" data-value="C">C</div>
+      </div>
+      <div class="nav-buttons">
+        <button type="button" id="prev3">Previous</button>
+        <button type="button" class="submit-btn" id="submitBtn">Submit</button>
+      </div>
     </div>
   </div>
+  <!-- Hidden form to capture selections -->
+  <form id="selectionForm" action="/yearselection" method="post" style="display: none;">
+    <input type="hidden" name="year" id="selectedYear">
+    <input type="hidden" name="branch" id="selectedBranch">
+    <input type="hidden" name="section" id="selectedSection">
+  </form>
+  <script>
+    const steps = [
+      document.getElementById('step1'),
+      document.getElementById('step2'),
+      document.getElementById('step3')
+    ];
+    let currentStep = 0;
+    const selections = { year: null, branch: null, section: null };
+
+    function showStep(index) {
+      steps.forEach((step, i) => {
+        step.classList.remove('active');
+        if (i === index) {
+          step.classList.add('active');
+        }
+      });
+      currentStep = index;
+    }
+
+    // Step 1: Year selection (auto-advance)
+    document.querySelectorAll('#step1 .option').forEach(option => {
+      option.addEventListener('click', function() {
+        selections.year = this.getAttribute('data-value');
+        document.getElementById('selectedYear').value = selections.year;
+        // Auto-advance to Step 2
+        showStep(1);
+      });
+    });
+
+    // Step 2: Branch selection (auto-advance)
+    document.querySelectorAll('#step2 .option').forEach(option => {
+      option.addEventListener('click', function() {
+        selections.branch = this.getAttribute('data-value');
+        document.getElementById('selectedBranch').value = selections.branch;
+        // Auto-advance to Step 3
+        showStep(2);
+      });
+    });
+
+    // Step 3: Section selection (requires manual submit)
+    document.querySelectorAll('#step3 .option').forEach(option => {
+      option.addEventListener('click', function() {
+        selections.section = this.getAttribute('data-value');
+        document.getElementById('selectedSection').value = selections.section;
+        // Visually indicate selection
+        document.querySelectorAll('#step3 .option').forEach(opt => {
+          opt.style.borderColor = 'transparent';
+          opt.style.background = 'rgba(255,255,255,0.9)';
+        });
+        this.style.borderColor = '#3498db';
+        this.style.background = '#e7f1ff';
+      });
+    });
+
+    // Navigation for Previous buttons
+    document.getElementById('prev2').addEventListener('click', () => showStep(0));
+    document.getElementById('prev3').addEventListener('click', () => showStep(1));
+
+    // Submit button handler
+    document.getElementById('submitBtn').addEventListener('click', function() {
+      if (!selections.section) {
+        alert('Please select a section before submitting.');
+        return;
+      }
+      document.getElementById('selectionForm').submit();
+    });
+  </script>
 </body>
 </html>
