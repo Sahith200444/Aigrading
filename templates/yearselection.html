@@ -4,52 +4,93 @@
   <meta charset="UTF-8">
   <title>Select your Class</title>
   <style>
-     body {
-         font-family: Arial, sans-serif;
-         background: #f5f5f5;
-         display: flex;
-         justify-content: center;
-         align-items: center;
-         height: 100vh;
-         margin: 0;
-     }
-     .container {
-         background: #fff;
-         padding: 30px;
-         border-radius: 8px;
-         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-         text-align: center;
-     }
-     h1 {
-         margin-bottom: 20px;
-     }
-     .dropdown-group {
-         margin-bottom: 15px;
-         text-align: left;
-     }
-     label {
-         display: block;
-         margin-bottom: 5px;
-         font-weight: bold;
-     }
-     select {
-         width: 100%;
-         padding: 8px;
-         border: 1px solid #ccc;
-         border-radius: 4px;
-     }
-     .btn {
-         background: #007bff;
-         color: #fff;
-         border: none;
-         padding: 10px 20px;
-         border-radius: 4px;
-         cursor: pointer;
-         font-size: 16px;
-     }
-     .btn:hover {
-         background: #0056b3;
-     }
+    /* Global Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+    }
+    /* Animated Gradient Background */
+    body {
+      background: linear-gradient(-45deg, #ff7e5f, #feb47b, #43cea2, #185a9d);
+      background-size: 400% 400%;
+      animation: gradientAnimation 15s ease infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    @keyframes gradientAnimation {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    /* Container Styles */
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 40px;
+      border-radius: 10px;
+      width: 350px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+      animation: fadeInUp 0.8s ease-out;
+      text-align: center;
+    }
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    h1 {
+      margin-bottom: 25px;
+      color: #333;
+    }
+    .dropdown-group {
+      margin-bottom: 15px;
+      text-align: left;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #333;
+    }
+    select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      transition: border-color 0.3s;
+      font-size: 14px;
+    }
+    select:focus {
+      border-color: #185a9d;
+      outline: none;
+    }
+    .btn {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s, transform 0.2s;
+      width: 100%;
+    }
+    .btn:hover {
+      background: #0056b3;
+      transform: translateY(-2px);
+    }
   </style>
 </head>
 <body>
