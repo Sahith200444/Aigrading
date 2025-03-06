@@ -4,30 +4,54 @@
   <meta charset="UTF-8">
   <title>AI powered Exam Grading System - Login/Register</title>
   <style>
-    /* Global Styles */
+    /* Global Reset */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #ff7e5f, #feb47b);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
     }
+    /* Animated Gradient Background */
+    body {
+      background: linear-gradient(-45deg, #ff7e5f, #feb47b, #43cea2, #185a9d);
+      background-size: 400% 400%;
+      animation: gradientAnimation 15s ease infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    @keyframes gradientAnimation {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    /* Container Styles */
     .container {
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.95);
       padding: 40px;
       border-radius: 10px;
       width: 350px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+      animation: fadeInUp 0.8s ease-out;
+    }
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
     .header {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
     }
     .header h1 {
       font-size: 24px;
@@ -38,23 +62,34 @@
     }
     .form-group label {
       display: block;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
       color: #333;
+      font-weight: bold;
     }
     .form-group input {
       width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
+      padding: 12px;
+      border: 1px solid #ccc;
       border-radius: 5px;
+      transition: border-color 0.3s;
+      font-size: 14px;
+    }
+    .form-group input:focus {
+      border-color: #185a9d;
+      outline: none;
     }
     .btn {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       border: none;
       border-radius: 5px;
       color: #fff;
       font-size: 16px;
       cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
     }
     .link {
       text-align: center;
@@ -62,15 +97,28 @@
     }
     .link a {
       text-decoration: none;
+      font-weight: bold;
+      transition: color 0.3s;
     }
-    /* Section Visibility */
+    /* Form Section Visibility */
     .form-section {
       display: none;
+      animation: slideIn 0.5s ease-out;
     }
     .form-section.active {
       display: block;
     }
-    /* Login Section Specific Styles */
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    /* Login Specific Styles */
     .login-section .btn {
       background: #ff7e5f;
     }
@@ -80,7 +128,10 @@
     .login-section .link a {
       color: #ff7e5f;
     }
-    /* Register Section Specific Styles */
+    .login-section .link a:hover {
+      color: #feb47b;
+    }
+    /* Register Specific Styles */
     .register-section .btn {
       background: #43cea2;
     }
@@ -89,6 +140,9 @@
     }
     .register-section .link a {
       color: #43cea2;
+    }
+    .register-section .link a:hover {
+      color: #185a9d;
     }
   </style>
   <script>
@@ -112,7 +166,7 @@
       <form action="/login" method="post">
         <div class="form-group">
           <label for="loginEmail">Email or Username</label>
-          <input type="text" id="loginEmail" name="loginEmail" placeholder="Enter your email" required>
+          <input type="text" id="loginEmail" name="loginEmail" placeholder="Enter your email or username" required>
         </div>
         <div class="form-group">
           <label for="loginPassword">Password</label>
