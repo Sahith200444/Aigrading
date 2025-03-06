@@ -16,14 +16,29 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       overflow: hidden;
     }
+    /* Wrapper for header and container */
+    .wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    /* Page Header */
+    .page-header {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .page-header h1 {
+      color: #fff;
+      font-size: 32px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
     /* Animated Gradient Background */
     body {
       background: linear-gradient(-45deg, #ff7e5f, #feb47b, #43cea2, #185a9d);
       background-size: 400% 400%;
       animation: gradientAnimation 15s ease infinite;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
     @keyframes gradientAnimation {
       0% { background-position: 0% 50%; }
@@ -49,11 +64,6 @@
         opacity: 1;
         transform: translateY(0);
       }
-    }
-    h1 {
-      margin-bottom: 25px;
-      color: #333;
-      font-size: 28px;
     }
     .dropdown-group {
       margin-bottom: 15px;
@@ -96,41 +106,45 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Select your Class</h1>
-    <form action="/yearselection" method="post">
-      <div class="dropdown-group">
-        <label for="year">Year</label>
-        <select id="year" name="year" required>
-          <option value="">Select Year</option>
-          <option value="I">I</option>
-          <option value="II">II</option>
-          <option value="III">III</option>
-          <option value="IV">IV</option>
-        </select>
-      </div>
-      <div class="dropdown-group">
-        <label for="branch">Branch</label>
-        <select id="branch" name="branch" required>
-          <option value="">Select Branch</option>
-          <option value="IT">IT</option>
-          <option value="CSE">CSE</option>
-          <option value="ECE">ECE</option>
-          <option value="Civil">Civil</option>
-          <option value="AI">AI</option>
-        </select>
-      </div>
-      <div class="dropdown-group">
-        <label for="section">Section</label>
-        <select id="section" name="section" required>
-          <option value="">Select Section</option>
-          <option value="a">a</option>
-          <option value="b">b</option>
-          <option value="c">c</option>
-        </select>
-      </div>
-      <button type="submit" class="btn">Submit</button>
-    </form>
+  <div class="wrapper">
+    <header class="page-header">
+      <h1>Select your Class</h1>
+    </header>
+    <div class="container">
+      <form action="/yearselection" method="post">
+        <div class="dropdown-group">
+          <label for="year">Year</label>
+          <select id="year" name="year" required>
+            <option value="">Select Year</option>
+            <option value="I">I</option>
+            <option value="II">II</option>
+            <option value="III">III</option>
+            <option value="IV">IV</option>
+          </select>
+        </div>
+        <div class="dropdown-group">
+          <label for="branch">Branch</label>
+          <select id="branch" name="branch" required>
+            <option value="">Select Branch</option>
+            <option value="IT">IT</option>
+            <option value="CSE">CSE</option>
+            <option value="ECE">ECE</option>
+            <option value="Civil">Civil</option>
+            <option value="AI">AI</option>
+          </select>
+        </div>
+        <div class="dropdown-group">
+          <label for="section">Section</label>
+          <select id="section" name="section" required>
+            <option value="">Select Section</option>
+            <option value="a">a</option>
+            <option value="b">b</option>
+            <option value="c">c</option>
+          </select>
+        </div>
+        <button type="submit" class="btn">Submit</button>
+      </form>
+    </div>
   </div>
 </body>
 </html>
