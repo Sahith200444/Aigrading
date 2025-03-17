@@ -1,5 +1,3 @@
-
-
 # AI Descriptive Exam Paper Correction
 
 This project is an AI-powered exam paper correction tool designed to automate the evaluation of descriptive answer scripts. It leverages PDF text extraction, AWS Textract, and Google Generative AI to assess student responses and compute scores according to predefined marking schemes.
