@@ -213,27 +213,36 @@ def do_login():
 
 @app.route('/register', methods=['POST'])
 def do_register():
-    full_name = request.form.get('fullName')
-    email = request.form.get('registerEmail')
-    password = request.form.get('registerPassword')
-    confirmPassword = request.form.get('confirmPassword')
+    try:
+        full_name = request.form.get('fullName')
+        email = request.form.get('registerEmail')
+        password = request.form.get('registerPassword')
+        confirmPassword = request.form.get('confirmPassword')
     
-    if password != confirmPassword:
-        flash("Passwords do not match.")
+        if password != confirmPassword:
+            flash("Passwords do not match.")
+            return redirect(url_for('index'))
+    
+        # Check if a user already exists using the email
+        if login_collection.find_one({"email": email}):
+            flash("User already exists with that email.")
+            return redirect(url_for('index'))
+    
+        # Insert new user into MongoDB
+        login_collection.insert_one({
+            "full_name": full_name,
+            "email": email,
+            "password": password  # Consider using hashing for production
+        })
+    
+        flash("Registration successful. Please login.")
         return redirect(url_for('index'))
-    
-    if login_collection.find_one({"email": email}):
-        flash("User already exists with that email.")
+    except Exception as e:
+        # Log the exception details to help debugging
+        app.logger.exception("Error during registration:")
+        flash(f"An error occurred during registration: {str(e)}")
         return redirect(url_for('index'))
-    
-    login_collection.insert_one({
-        "full_name": full_name,
-        "email": email,
-        "password": password
-    })
-    
-    flash("Registration successful. Please login.")
-    return redirect(url_for('index'))
+
 
 @app.route('/logout')
 def logout():
