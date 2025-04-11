@@ -1,6 +1,6 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, session
-from flask_mysqldb import MySQL
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from pymongo import MongoClient, DESCENDING
 import google.generativeai as genai
 from datetime import datetime
 from pdf2image import convert_from_bytes
@@ -15,12 +15,13 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'abc3445')
 
-# MySQL configuration
-app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST', 'sql12.freesqldatabase.com')
-app.config['MYSQL_USER'] = os.getenv('MYSQL_USER', 'sql12763236')
-app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD', 'DV3kKNJmYI')
-app.config['MYSQL_DB'] = os.getenv('MYSQL_DB', 'sql12763236')
-mysql = MySQL(app)
+# MongoDB configuration using Atlas connection string
+mongo_uri = os.getenv('MONGO_URI')
+client = MongoClient(mongo_uri)
+db = client["aigrading"]  # Use your MongoDB database
+login_collection = db["login"]
+paper_collection = db["paper"]
+result_collection = db["result"]
 
 # Configure google generative AI
 genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
@@ -69,7 +70,7 @@ def extract_text_from_pdf_s3(s3_key):
 
 # Helper: Use Textract to extract text from an image
 def extract_text_from_image(image):
-    client = boto3.client(
+    client_textract = boto3.client(
         'textract',
         aws_access_key_id=os.getenv('AWS_TEXTRACT_ACCESS_KEY_ID'),
         aws_secret_access_key=os.getenv('AWS_TEXTRACT_SECRET_ACCESS_KEY'),
@@ -78,7 +79,7 @@ def extract_text_from_image(image):
     image_byte_array = io.BytesIO()
     image.save(image_byte_array, format='PNG')
     content = image_byte_array.getvalue()
-    response = client.detect_document_text(Document={'Bytes': content})
+    response = client_textract.detect_document_text(Document={'Bytes': content})
     blocks = response.get('Blocks', [])
     texts = [block['Text'] for block in blocks if block.get('BlockType') == 'LINE']
     return "\n".join(texts)
@@ -186,8 +187,6 @@ ANSWER SCRIPT:
 
 # ---------- Authentication Routes ----------
 
-# ---------- Authentication Routes ----------
-
 @app.route('/', methods=['GET'])
 def index():
     # Render the combined login/registration page (auth.html)
@@ -198,17 +197,13 @@ def do_login():
     email = request.form.get('loginEmail')
     password = request.form.get('loginPassword')
     
-    cursor = mysql.connection.cursor()
-    cursor.execute("SELECT * FROM login WHERE email=%s AND password=%s", (email, password))
-    user = cursor.fetchone()
-    cursor.close()
+    user = login_collection.find_one({"email": email, "password": password})
     
     if user:
-        # Set session data (using full_name as username)
-        session['username'] = user[0]
-        # Check if the credentials are exactly M Sahith Reddy, msahithreddy5@gmail.com
-        # (If needed, you could also check for the roll number "12" if that data is available)
-        if user[0] == "M Sahith Reddy" and user[1] == "msahithreddy5@gmail.com":
+        # Set session data (using email as username)
+        session['username'] = user.get("full_name", email)
+        # Check for specific credentials if needed
+        if user.get("full_name") == "M Sahith Reddy" and email == "msahithreddy5@gmail.com":
             return redirect(url_for('dash'))
         else:
             return redirect(url_for('yearselection'))
@@ -227,19 +222,15 @@ def do_register():
         flash("Passwords do not match.")
         return redirect(url_for('index'))
     
-    cursor = mysql.connection.cursor()
-    cursor.execute("SELECT * FROM login WHERE email=%s", (email,))
-    user = cursor.fetchone()
-    
-    if user:
+    if login_collection.find_one({"email": email}):
         flash("User already exists with that email.")
-        cursor.close()
         return redirect(url_for('index'))
     
-    cursor.execute("INSERT INTO login (full_name, email, password) VALUES (%s, %s, %s)",
-                   (full_name, email, password))
-    mysql.connection.commit()
-    cursor.close()
+    login_collection.insert_one({
+        "full_name": full_name,
+        "email": email,
+        "password": password
+    })
     
     flash("Registration successful. Please login.")
     return redirect(url_for('index'))
@@ -265,8 +256,6 @@ def yearselection():
         return redirect(url_for('result', year=year, branch=branch, section=section))
     
     return render_template('yearselection.html')
-
-
 
 @app.route('/dash.html', methods=['GET', 'POST'])
 def dash():
@@ -294,12 +283,17 @@ def dash():
             s3.upload_fileobj(q_paper, bucket_name, q_paper_key, ExtraArgs={'ContentType': q_paper.content_type})
             s3.upload_fileobj(a_paper, bucket_name, a_paper_key, ExtraArgs={'ContentType': a_paper.content_type})
             
-            # Save the S3 keys in your database
-            cursor = mysql.connection.cursor()
-            cursor.execute("INSERT INTO paper (stu_name, stu_roll, year, branch, section, questionpaper, answerscript, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                           (stu_name, stu_roll, year, branch, section, q_paper_key, a_paper_key, datetime.now()))
-            mysql.connection.commit()
-            cursor.close()
+            # Save the S3 keys in MongoDB 'paper' collection
+            paper_collection.insert_one({
+                "stu_name": stu_name,
+                "stu_roll": stu_roll,
+                "year": year,
+                "branch": branch,
+                "section": section,
+                "questionpaper": q_paper_key,
+                "answerscript": a_paper_key,
+                "created_at": datetime.utcnow()
+            })
 
             flash('File successfully uploaded')
             return redirect(url_for('dash'))
@@ -317,34 +311,31 @@ def result():
         flash("Year, branch, and section are required.")
         return redirect(url_for('dash'))
     
-    cursor = mysql.connection.cursor()
-    cursor.execute(
-        "SELECT questionpaper, answerscript, stu_roll FROM paper WHERE year=%s AND branch=%s AND section=%s ORDER BY created_at DESC",
-        (year, branch, section)
-    )
-    records = cursor.fetchall()
-    cursor.close()
+    # Query papers from MongoDB based on the given criteria and sort by created_at desc
+    records = list(paper_collection.find(
+        {"year": year, "branch": branch, "section": section}
+    ).sort("created_at", DESCENDING))
 
     if not records:
         flash('No records found for the selected criteria')
         return redirect(url_for('dash'))
 
     # Build a list of roll numbers for the sidebar.
-    roll_numbers = [record[2] for record in records]
+    roll_numbers = [record.get("stu_roll") for record in records]
 
     # Determine which record to display.
     record_to_display = None
     if selected_roll:
         for record in records:
-            if record[2] == selected_roll:
+            if record.get("stu_roll") == selected_roll:
                 record_to_display = record
                 break
     if not record_to_display:
         record_to_display = records[0]
 
-    q_paper_key = record_to_display[0]
-    a_paper_key = record_to_display[1]
-    stu_roll = record_to_display[2]
+    q_paper_key = record_to_display.get("questionpaper")
+    a_paper_key = record_to_display.get("answerscript")
+    stu_roll = record_to_display.get("stu_roll")
 
     # Extract texts from PDFs.
     questions = extract_text_from_pdf_s3(q_paper_key)
@@ -369,7 +360,6 @@ def result():
                            branch=branch,
                            section=section)
 
-
 @app.route('/submit_scores', methods=['POST'])
 def submit_scores():
     try:
@@ -380,20 +370,18 @@ def submit_scores():
         section = request.form.get('section')
         total_score = sum(scores)
 
-        cursor = mysql.connection.cursor()
-        cursor.execute("INSERT INTO result (Roll_no, score) VALUES (%s, %s)", 
-                       (roll_no, total_score))
-        mysql.connection.commit()
+        result_collection.insert_one({
+            "Roll_no": roll_no,
+            "score": total_score,
+            "submitted_at": datetime.utcnow()
+        })
 
         # Retrieve all roll numbers for the selected criteria.
-        cursor.execute(
-            "SELECT stu_roll FROM paper WHERE year=%s AND branch=%s AND section=%s ORDER BY created_at DESC",
-            (year, branch, section)
-        )
-        records = cursor.fetchall()
-        cursor.close()
+        records = list(paper_collection.find(
+            {"year": year, "branch": branch, "section": section}
+        ).sort("created_at", DESCENDING))
 
-        roll_numbers = [record[0] for record in records]
+        roll_numbers = [record.get("stu_roll") for record in records]
 
         # Find the current roll number's index.
         try:
