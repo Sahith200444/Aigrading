@@ -209,7 +209,7 @@ def do_login():
         session['username'] = user[0]
         # Check if the credentials are exactly M Sahith Reddy, msahithreddy5@gmail.com
         # (If needed, you could also check for the roll number "12" if that data is available)
-        if user[0] == "M Sahith Reddy" and user[1] == "msahithreddy5@gmail.com":
+        if user[0] == "sahith" and user[1] == "msahithreddy5@gmail.com":
             return redirect(url_for('dash'))
         else:
             return redirect(url_for('yearselection'))
