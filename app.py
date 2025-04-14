@@ -20,7 +20,7 @@ app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST', 'mysql-28dcd4ff-msahithreddy5
 app.config['MYSQL_USER'] = os.getenv('MYSQL_USER', 'avnadmin')
 app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD')
 app.config['MYSQL_DB'] = os.getenv('MYSQL_DB', 'defaultdb')
-app.config['MYSQL_PORT']=os.getenv('MYSQL_PORT','13073')
+app.config['MYSQL_PORT']=int(os.getenv('MYSQL_PORT',13073))
 mysql = MySQL(app)
 
 # Configure google generative AI
