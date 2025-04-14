@@ -16,10 +16,10 @@ app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'abc3445')
 
 # MySQL configuration
-app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST', 'sql12.freesqldatabase.com')
-app.config['MYSQL_USER'] = os.getenv('MYSQL_USER', 'sql12763236')
-app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD', 'DV3kKNJmYI')
-app.config['MYSQL_DB'] = os.getenv('MYSQL_DB', 'sql12763236')
+app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST', 'sql206.infinityfree.com')
+app.config['MYSQL_USER'] = os.getenv('MYSQL_USER', 'if0_38745230')
+app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD', 'KiwzyKuS8JUGT')
+app.config['MYSQL_DB'] = os.getenv('MYSQL_DB', 'if0_38745230_aigrading')
 mysql = MySQL(app)
 
 # Configure google generative AI
