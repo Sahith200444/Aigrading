@@ -209,7 +209,7 @@ def do_login():
         session['username'] = user[0]
         # Check if the credentials are exactly M Sahith Reddy, msahithreddy5@gmail.com
         # (If needed, you could also check for the roll number "12" if that data is available)
-        if user[0] == "sahith" and user[1] == "msahithreddy5@gmail.com":
+        if user[0] == "M Sahith Reddy" and user[1] == "msahithreddy5@gmail.com":
             return redirect(url_for('dash'))
         else:
             return redirect(url_for('yearselection'))
@@ -306,44 +306,69 @@ def dash():
             return redirect(url_for('dash'))
     return render_template('dash.html')
 
-@app.route('/results')
-def results():
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
+@app.route('/result', methods=['GET', 'POST'])
+def result():
+    # Get the selected criteria from the query parameters
     year = request.args.get('year')
     branch = request.args.get('branch')
     section = request.args.get('section')
+    selected_roll = request.args.get('roll_no')
 
-    conn = mysql.connect()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT q_key, a_key, roll_no FROM scripts WHERE year=%s AND branch=%s AND section=%s", (year, branch, section))
+    if not (year and branch and section):
+        flash("Year, branch, and section are required.")
+        return redirect(url_for('dash'))
+    
+    cursor = mysql.connection.cursor()
+    cursor.execute(
+        "SELECT questionpaper, answerscript, stu_roll FROM paper WHERE year=%s AND branch=%s AND section=%s ORDER BY created_at DESC",
+        (year, branch, section)
+    )
     records = cursor.fetchall()
     cursor.close()
-    conn.close()
 
-    results = []
-    for q_key, a_key, roll_no in records:
-        try:
-            question_text = extract_text_from_pdf_s3(q_key)
-            answer_text = extract_text_from_pdf_s3(a_key)
-            pattern = determine_pattern(question_text)
-            scores = gpt(question_text, answer_text, pattern)
-            results.append({
-                'roll_no': roll_no,
-                'scores': scores,
-                'q_url': get_s3_presigned_url(q_key),
-                'a_url': get_s3_presigned_url(a_key),
-            })
-        except Exception as e:
-            results.append({
-                'roll_no': roll_no,
-                'error': f"Error during evaluation: {str(e)}"
-            })
+    if not records:
+        flash('No records found for the selected criteria')
+        return redirect(url_for('dash'))
 
-    return render_template('result.html', results=results, year=year, branch=branch, section=section)
+    # Build a list of roll numbers for the sidebar.
+    roll_numbers = [record[2] for record in records]
 
+    # Determine which record to display.
+    record_to_display = None
+    if selected_roll:
+        for record in records:
+            if record[2] == selected_roll:
+                record_to_display = record
+                break
+    if not record_to_display:
+        record_to_display = records[0]
+
+    q_paper_key = record_to_display[0]
+    a_paper_key = record_to_display[1]
+    stu_roll = record_to_display[2]
+
+    # Extract texts from PDFs.
+    questions = extract_text_from_pdf_s3(q_paper_key)
+    answers = extract_text_from_pdf_s3(a_paper_key)
+
+    pattern_type = determine_pattern(questions)
+    scores = gpt(questions, answers, pattern_type=pattern_type)
+    if isinstance(scores, str):
+        flash(scores)
+        return redirect(url_for('result'))
+
+    # Generate a presigned URL for the answer script.
+    answerscript_url = get_s3_presigned_url(a_paper_key)
+
+    return render_template('result.html', 
+                           scores=scores, 
+                           answerscript_url=answerscript_url,
+                           stu_roll=stu_roll,
+                           pattern_type=pattern_type,
+                           roll_numbers=roll_numbers,
+                           year=year,
+                           branch=branch,
+                           section=section)
 
 
 @app.route('/submit_scores', methods=['POST'])
