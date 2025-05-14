@@ -96,7 +96,7 @@ def determine_pattern(questions_text):
 def gpt(questions, answers, pattern_type="pattern1"):
     try:
         if pattern_type == "pattern1":
-            user_input = f"""Evaluate the answer script strictly following these rules:
+            user_input = f"""Evaluate the answer script strictly following these rules from a question paper:
 
 PART-A (10 questions, 1 mark each):
 - Return 10 scores separated by spaces (0.0 or 0.5 or 1.0)
@@ -105,6 +105,7 @@ Example: '1.0 0.5 1.0 0.0 1.0 0.5 1.0 1.0 0.5 1.0'
 PART-B (5 main questions Q11-Q15, each with subquestions a and b):
 - For each answered subquestion, use format 'q<x><y>:score' where <x> is the question number (11-15) and <y> is either a or b.
 - Score must be between 0.0 and 10.0
+- Give 0 if the answer is not written for a question
 
 QUESTION PAPER:
 {questions}
@@ -113,7 +114,7 @@ ANSWER SCRIPT:
 {answers}
 """
         elif pattern_type == "pattern2":
-            user_input = f"""Evaluate the answer script strictly following these rules:
+            user_input = f"""Evaluate the answer script strictly following these rules from a question paper:
 
 PART-A (1 question with 10 subquestions a-j, 1 mark each):
 - Return 10 scores in the format '1a:score 1b:score ... 1j:score'
@@ -209,7 +210,7 @@ def do_login():
         session['username'] = user[0]
         # Check if the credentials are exactly M Sahith Reddy, msahithreddy5@gmail.com
         # (If needed, you could also check for the roll number "12" if that data is available)
-        if user[0] == "M Sahith Reddy" and user[1] == "msahithreddy5@gmail.com":
+        if user[1] == "msahithreddy5@gmail.com":
             return redirect(url_for('dash'))
         else:
             return redirect(url_for('yearselection'))
@@ -267,6 +268,50 @@ def yearselection():
     
     return render_template('yearselection.html')
 
+@app.route('/class_marks')
+def view_class_marks():
+    year    = request.args.get('year')
+    branch  = request.args.get('branch')
+    section = request.args.get('section')
+
+    if not all([year, branch, section]):
+        flash("Missing class parameters.")
+        return redirect(url_for('result',
+                                year=year, branch=branch, section=section))
+
+    cursor = mysql.connection.cursor()
+    # Join paper → result, filter by paper.year/branch/section,
+    # then order so we can pick each roll's latest entry
+    cursor.execute("""
+        SELECT r.Roll_no, r.score, r.created_at
+        FROM result AS r
+        JOIN paper  AS p
+          ON r.Roll_no = p.stu_roll
+        WHERE p.year   = %s
+          AND p.branch = %s
+          AND p.section= %s
+        ORDER BY r.Roll_no, r.created_at DESC
+    """, (year, branch, section))
+
+    rows = cursor.fetchall()
+    cursor.close()
+
+    # Keep only the first (latest) per roll
+    latest = {}
+    for roll, score, ts in rows:
+        if roll not in latest:
+            latest[roll] = (score, ts)
+
+    class_list = [
+        {'roll_no': roll, 'score': s, 'timestamp': t}
+        for roll, (s, t) in sorted(latest.items())
+    ]
+
+    return render_template(
+        'class_marks.html',
+        class_list=class_list,
+        year=year, branch=branch, section=section
+    )
 
 
 @app.route('/dash.html', methods=['GET', 'POST'])
