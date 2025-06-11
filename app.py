@@ -101,6 +101,7 @@ def gpt(questions, answers, pattern_type="pattern1"):
 PART-A (10 questions, 1 mark each):
 - Return 10 scores separated by spaces (0.0 or 0.5 or 1.0)
 Example: '1.0 0.5 1.0 0.0 1.0 0.5 1.0 1.0 0.5 1.0'
+- Give 0 if the answer is not written for a question
 
 PART-B (5 main questions Q11-Q15, each with subquestions a and b):
 - For each answered subquestion, use format 'q<x><y>:score' where <x> is the question number (11-15) and <y> is either a or b.
@@ -119,10 +120,12 @@ ANSWER SCRIPT:
 PART-A (1 question with 10 subquestions a-j, 1 mark each):
 - Return 10 scores in the format '1a:score 1b:score ... 1j:score'
 Example: '1a:1.0 1b:0.5 1c:1.0 1d:0.0 1e:1.0 1f:0.5 1g:1.0 1h:1.0 1i:0.5 1j:1.0'
+- Give 0 if the answer is not written for a question
 
 PART-B (6 main questions Q2-Q7):
 - For each answered question, use format 'q<x>:score'
 - Score must be between 0.0 and 10.0
+- Give 0 if the answer is not written for a question
 
 QUESTION PAPER:
 {questions}
